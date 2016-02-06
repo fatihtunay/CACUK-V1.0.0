@@ -1,0 +1,548 @@
+//CACUK V1.00 arduino kodları 
+//BİRAZ KARMAŞIK VE AMATÖRCE OLSADA BEN YAPTIM SONUÇTA
+// MAZEME LİSTESİ
+//ARDUİNO UNO -25TL
+//HC-SR04 -10TL
+//CNY70X2 -1,5 TL
+//74HC14 -1 TL
+//MİNİ BREADBOARDX2 -3.5 TL
+//X2 REDÜKATÖRLÜ MOTOR - KENDİM OYUNCAKTAN SÖKTÜM
+//L293B -8TL
+//LİTYUM İON 9V2A PİL 2 TELEFON PİLİNİ SERİ BAĞLADIM
+//BOL BOL SWİCH -ELDEKİLERİ DEĞERLENDİRDİM
+//HOPARLÖR - OYUNCAKTAN SÖKEBİLİRSİNİZ
+//TOP=53,5
+
+
+
+#define NOTE_G5 784   //müzik notalarının frekanslarını tanımlıyoruz aslında burada
+#define NOTE_1C 523
+#define NOTE_2D 587
+#define NOTE_3E 659
+#define NOTE_4F 698 
+#define NOTE_E4 330 
+#define NOTE_F4 349 
+#define NOTE_G4 392 
+#define NOTE_DS5 622 
+#define NOTE_D5 587 
+#define NOTE_B4 494 
+#define NOTE_A4 440 
+#define NOTE_FS5 740 
+#define NOTE_F5 698 
+#define NOTE_AS5 932 
+#define NOTE_DS6 1245 
+#define NOTE_D6 1175 
+
+
+const int trig = 7;  //ultrasonik sensör bağlantısını yaparken sensörün üstünde yazan trig ve echo simgeleriyle burdaki pinlerin birbirine paralel olması lazım
+const int echo = 6;
+
+const int sol_i = 2; //motor bağlantıları
+const int sol_g = 3;
+const int sag_i = 5;
+const int sag_g = 4;
+
+
+
+
+const int sol_sensor_cizgi = 8;  //cny 70 i 74hc14 ile çıkış elde ettikten sonra elinizde kalan 2 kabloyu 8 ve 10. pinlere takın devre şemasını klasörde bulabilirsiniz
+const int sag_sensor_cizgi = 10;
+
+const int hoparlor = 9; //hoparlörün +ucunu 9. pine -ucunu gnd ye takın
+
+//değişkenlerimiz
+int sag_deger = 0;
+int sol_deger = 0;
+
+int sure = 0;
+int mesafe = 0;
+int muzik = 0;
+
+int sol_durum, sag_durum;
+int a = 0;
+boolean b;
+boolean sol;
+boolean sag;
+
+
+
+
+
+
+
+
+int sensor_ntc = 0;
+int sensor_ldr_sol = 0;
+int sensor_ldr_sag = 0;
+boolean ileri;
+
+unsigned long pulsetime = 0;
+unsigned distance = 0;
+unsigned OldDistance = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void setup() {
+ 
+  //giriş çıkış atamaları
+  pinMode(trig , OUTPUT);
+  pinMode(echo , INPUT);
+
+  pinMode(sol_i , OUTPUT);
+  pinMode(sol_g , OUTPUT);
+  pinMode(sag_i, OUTPUT);
+  pinMode(sag_g, OUTPUT);
+  pinMode(hoparlor, OUTPUT);
+
+  pinMode(sag_sensor_cizgi, INPUT);
+  pinMode(sol_sensor_cizgi, INPUT);
+  Serial.begin(9600);
+
+
+}
+
+void loop() {
+
+
+ 
+  b = analogRead(1);
+  if (b == 0) //sayaç algoritmasını oluşturuyoruz robotunuzun 
+              //herangibiyerine koyucağınız herangibi swichi pull up 
+              //bağlantısıyla birlikte analog1 pinine takıyoruz
+  {
+    a++;
+    while (1)
+    {
+      b = analogRead(1);
+      if (b == 1)
+        break;
+    }
+  }
+  else if (a > 5) //sayacımız 5e kadar saydıktan sonra başa döner 
+  {
+    a = 0;
+  }
+  //  Serial.println(a);
+
+
+
+  sol_durum = digitalRead(sol_sensor_cizgi);
+  sag_durum = digitalRead(sag_sensor_cizgi);
+
+  sensor_ntc = analogRead(0); //ntc bağlantımızı analog 0 pinine pull up ile yapıyoruz
+                              // ntcyi motor sürücünün üstüne doğru kıvırmamız gerekiyor
+  sensor_ldr_sol = analogRead(4);   //ışık sensörleri A4 VE A5e 
+  sensor_ldr_sag = analogRead(5);
+
+
+
+
+
+
+
+
+  if (sensor_ntc <= 300 ) //motor ısınırsa robot kendini kapatır 
+  {
+    Serial.println("sistem durdu");
+
+  }
+
+
+
+  //
+  //    else if ( 84 == results.value || 2132 == results.value )
+  //   {
+  //
+  //    if (sol_durum == HIGH && sag_durum == HIGH)
+  //    {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("robot havada");
+  //
+  //    }
+  //    else {
+  //      digitalWrite(sag_i, HIGH);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, HIGH);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("ileri gidiyorum");
+  //    }
+  //
+  //
+  //
+  //
+  //
+  //  }
+  //  else if ( 85 == results.value || 2133 == results.value )
+  //  {
+  //    if (sol_durum == HIGH && sag_durum == HIGH)
+  //    {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("robot havada");
+  //
+  //    }
+  //    else {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, HIGH);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("sola gidiyorum");
+  //    }
+  //
+  //
+  //
+  //  }
+  //  else if ( 86 == results.value || 2134 == results.value )
+  //  {
+  //    if (sol_durum == HIGH && sag_durum == HIGH)
+  //    {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("robot havada");
+  //
+  //    }
+  //    else {
+  //      digitalWrite(sag_i, HIGH);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("saga gidiyorum");
+  //    }
+  //
+  //
+  //  }
+  //  else if ( 83 == results.value || 2131 == results.value )
+  //  {
+  //    if (sol_durum == HIGH && sag_durum == HIGH)
+  //    {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("robot havada");
+  //
+  //    }
+  //    else {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, HIGH);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, HIGH);
+  //      Serial.println("geri gidiyorum");
+  //    }
+  //
+  //
+  //  }
+  //  else if ( 117 == results.value || 2165 == results.value )
+  //  {
+  //    if (sol_durum == HIGH && sag_durum == HIGH)
+  //    {
+  //      digitalWrite(sag_i, LOW);
+  //      digitalWrite(sag_g, LOW);
+  //      digitalWrite(sol_i, LOW);
+  //      digitalWrite(sol_g, LOW);
+  //      Serial.println("robot havada");
+  //
+  //    }
+  //    else {
+  //      digitalWrite(sag_i, HIGH);
+  //      digitalWrite(sag_g, HIGH);
+  //      digitalWrite(sol_i, HIGH);
+  //      digitalWrite(sol_g, HIGH);
+  //      Serial.println("fren");
+  //    }
+  //
+  //
+  //  }
+
+  else if (a == 1)//sayaç 1 ise engelden kaçan algoritması başlatılır
+  {
+
+
+
+    digitalWrite(trig, LOW);   //hc-sr04 algoritması
+    delayMicroseconds(100);
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(100);
+    digitalWrite(trig, LOW);
+    pulsetime = pulseIn(echo, HIGH);
+    mesafe = pulsetime / 58;
+    delay(10);
+
+    if (sol_durum == HIGH && sag_durum == HIGH) //eğer robot havaya kalkarsa motorlar durur
+    {
+      digitalWrite(sag_i, LOW);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, LOW);
+      digitalWrite(sol_g, LOW);
+      Serial.println("robot havada");
+
+    }
+    else if ( mesafe < 20) //eğer robot ile duvar arası 20 cm varsa robot sola döner
+    {
+
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, LOW);
+      digitalWrite(sag_i, LOW);
+      digitalWrite(sag_g, HIGH);
+      Serial.println("engel var");
+      delay(100);
+    }
+
+
+
+
+    else
+    {
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, LOW);
+      digitalWrite(sag_i, HIGH);
+      digitalWrite(sag_g, LOW);
+      Serial.println("e.k ileri");
+    }
+    delay(50);
+
+
+
+
+
+
+  }
+
+
+  else if (a == 2) //eğer sayaç 2 ise çizgi izliyen algoritması başlatılır
+  {
+
+
+    if (sol_durum == LOW && sag_durum == LOW) 
+    {
+      digitalWrite(sag_i, HIGH);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, LOW);
+      Serial.println("ç.i ileri");
+    }
+    else if (sol_durum == LOW && sag_durum == HIGH)
+    {
+      digitalWrite(sag_i, HIGH);
+      digitalWrite(sag_g, HIGH);
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, LOW);
+      Serial.println("ç.i saga");
+    }
+    else if (sol_durum == HIGH && sag_durum == LOW)
+    {
+      digitalWrite(sag_i, HIGH);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, HIGH);
+      Serial.println("ç.i sola");
+    }
+
+
+    else
+    {
+      digitalWrite(sag_i, LOW);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, LOW);
+      digitalWrite(sol_g, LOW);
+      Serial.println("ç.i bitiş çizgisi");
+    }
+    delay(10);
+    digitalWrite(sag_i, LOW);
+    digitalWrite(sag_g, LOW);
+    digitalWrite(sol_i, LOW);
+    digitalWrite(sol_g, LOW);
+    delay(25);
+
+
+
+
+
+
+  }
+
+
+  else if (a == 3) //eğer sayaç 3 olursa ışık izliyen başlatılır
+  {
+    ileri = sensor_ldr_sol - sensor_ldr_sag <= 100 && sensor_ldr_sol - sensor_ldr_sag >= 1 ;
+
+
+
+
+
+
+
+    if (sol_durum == HIGH && sag_durum == HIGH)
+    {
+      digitalWrite(sag_i, LOW);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, LOW);
+      digitalWrite(sol_g, LOW);
+      Serial.println("robot havada");
+
+    }
+
+
+
+    else if ( ileri == 1  )
+    {
+      digitalWrite(sag_i, HIGH);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, LOW);
+      Serial.println("I.i ileri");
+      delay(10);
+    }
+    else if (sensor_ldr_sag < sensor_ldr_sol)
+    {
+
+      digitalWrite(sol_i, HIGH);
+      digitalWrite(sol_g, LOW);
+      digitalWrite(sag_i, LOW);
+      digitalWrite(sag_g, HIGH);
+      Serial.println("I.i SOLA");
+      delay(10);
+
+    }
+    else if ( sensor_ldr_sol < sensor_ldr_sag )
+    {
+
+      digitalWrite(sag_i, HIGH);
+      digitalWrite(sag_g, LOW);
+      digitalWrite(sol_i, LOW);
+      digitalWrite(sol_g, HIGH);
+      Serial.println("I.i SAGA");
+      delay(10);
+    }
+
+
+
+    else {}
+
+
+
+
+
+
+
+
+  }
+  else if (a == 4) //eğer sayaç 4 ise seri haberleşmeyi başlatır ve hc-sr04 den aldığı bilgileri procesinge iletir
+  {
+    digitalWrite(trig, LOW);
+    delayMicroseconds(100);
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(100);
+    digitalWrite(trig, LOW);
+    pulsetime = pulseIn(echo, HIGH);
+    distance = pulsetime / 58;
+    delay(10);
+
+
+    if (OldDistance != distance) {
+
+      Serial.println(distance);
+
+      OldDistance = distance;
+    }
+
+    delay(50);
+    Serial.println("UÇAK OYUNU");
+ }
+//  else if (a == 5);
+ // {
+    digitalWrite(trig, LOW);
+    delayMicroseconds(100);
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(100);
+    digitalWrite(trig, LOW);
+    pulsetime = pulseIn(echo, HIGH);
+    muzik = pulsetime / 58;
+   
+    
+    
+    //mesafeye göre müzik çalma algoritması
+    if (muzik <= 7 && muzik >= 0 )
+    {
+      tone(9, NOTE_1C, 100);
+
+    }
+
+    else if (muzik <= 12 && muzik >= 7  )
+    {
+      tone(9, NOTE_2D, 100);
+
+    }
+
+    else if (muzik <= 17 && muzik >= 12)
+    {
+      tone(9, NOTE_3E, 100);
+
+    }
+
+    else if (muzik <= 22 && muzik >= 17 )
+    {
+
+      tone(9, NOTE_4F, 100);
+
+    }
+
+    else if (muzik <= 30 && muzik >= 22  )
+    {
+      tone(9, NOTE_G5, 100);
+
+    }
+
+    else if (muzik <= 36 && muzik >=30 )
+    {
+      tone(9,NOTE_A4, 100);
+
+    }
+    else if (muzik <=40  && muzik >= 36 )
+    {
+      tone(9, NOTE_E4, 100);
+
+    }
+
+    else if (muzik >= 40 || muzik == 1  )
+    {
+
+      noTone(9);
+    }
+
+
+    else
+      noTone(9);
+//  }
+
+
+
+}
+
+
+
+
+
